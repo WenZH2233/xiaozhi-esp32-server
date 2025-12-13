@@ -496,7 +496,7 @@ class ConnectionHandler:
 
     def _initialize_asr(self):
         """初始化ASR"""
-        if self._asr.interface_type == InterfaceType.LOCAL:
+        if self._asr is not None and hasattr(self._asr, "interface_type") and self._asr.interface_type == InterfaceType.LOCAL:
             # 如果公共ASR是本地服务，则直接返回
             # 因为本地一个实例ASR，可以被多个连接共享
             asr = self._asr
@@ -1170,6 +1170,11 @@ class ConnectionHandler:
                         q.get_nowait()
                     except queue.Empty:
                         break
+
+            # 重置音频流控器（取消后台任务并清空队列）
+            if hasattr(self, "audio_rate_controller") and self.audio_rate_controller:
+                self.audio_rate_controller.reset()
+                self.logger.bind(tag=TAG).debug("已重置音频流控器")
 
             self.logger.bind(tag=TAG).debug(
                 f"清理结束: TTS队列大小={self.tts.tts_text_queue.qsize()}, 音频队列大小={self.tts.tts_audio_queue.qsize()}"
